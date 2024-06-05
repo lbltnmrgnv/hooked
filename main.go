@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"hello/controllers"
+	"hello/internal/api/handlers"
 	"net/http"
 	"os"
 )
@@ -13,7 +13,7 @@ func main() {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/user", controllers.Register).Methods("POST")
+	router.HandleFunc("/api/user", handlers.Register).Methods("POST")
 
 	router.Use()
 

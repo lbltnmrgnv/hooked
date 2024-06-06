@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"hello/internal/api/handlers"
+	"hello/internal/api/middleware"
 	"net/http"
 	"os"
 )
@@ -11,10 +12,14 @@ import (
 func main() {
 	fmt.Println("Hello")
 
+	basicAuth := middleware.BasicAuth()
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/user", handlers.Register).Methods("POST")
+	router.Handle("/api/register", handlers.Register()).Methods("POST")
+	router.Handle("/api/login", handlers.Login()).Methods("POST")
 
+	router.Handle("/api/posts", basicAuth(handlers.CreatePost())).Methods("POST")
+	router.Handle("/api/posts", basicAuth(handlers.ListOfPosts())).Methods("GET")
 	router.Use()
 
 	port := os.Getenv("PORT")

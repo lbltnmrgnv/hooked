@@ -5,7 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 	"hello/packages/database"
-	responses "hello/packages/http"
+	res "hello/packages/http"
 	"strings"
 )
 
@@ -55,29 +55,19 @@ func (u *User) UserUniqCheck() bool {
 
 func (u *User) Validate() map[string]interface{} {
 	if u.Email == "" {
-		return responses.ErrorResponse(4000, "Email address is required")
+		return res.Error(4000, "Email address is required")
 	}
 	if !strings.Contains(u.Email, "@") {
-		return responses.ErrorResponse(4001, "Email is not valid email")
+		return res.Error(4001, "Email is not valid email")
 	}
 	if u.Password == "" {
-		return responses.ErrorResponse(4000, "Password is required")
+		return res.Error(4000, "Password is required")
 	}
 	if len(u.Password) < 8 {
-		return responses.ErrorResponse(4002, "Password must be longer than 8 characters")
+		return res.Error(4002, "Password must be longer than 8 characters")
 	}
 	if !u.UserUniqCheck() {
-		return responses.ErrorResponse(4003, "User already exists")
+		return res.Error(4003, "User already exists")
 	}
 	return nil
-}
-
-func (u *User) Create() *User {
-	err := u.HashPassword()
-	if err != nil {
-		return nil
-	}
-	database.Postgres().Create(u)
-	u.SanitizePassword()
-	return u
 }

@@ -2,43 +2,46 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
-	"github.com/jinzhu/gorm"
 	"hello/internal/models"
-	"hello/packages/database"
+	"hello/internal/service"
 	res "hello/packages/http"
 	"net/http"
 )
 
-func Register(w http.ResponseWriter, r *http.Request) {
-	user := &models.User{}
-	err := json.NewDecoder(r.Body).Decode(user)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		res.Response(w, res.ErrorResponse(4000, "Invalid request"), http.StatusBadRequest)
-		return
+func Register() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := &models.User{}
+		err := json.NewDecoder(r.Body).Decode(user)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			res.Response(w, res.Error(4000, "Invalid request"), http.StatusBadRequest)
+			return
+		}
+		createdUser, resErr := service.Register(user)
+		if resErr != nil {
+			res.Response(w, resErr, http.StatusBadRequest)
+			return
+		}
+		res.Response(w, map[string]interface{}{"user": createdUser}, http.StatusCreated)
 	}
-	if err := user.Validate(); err != nil {
-		res.Response(w, err, http.StatusBadRequest)
-		return
-	}
-	createdUser := user.Create()
-	res.Response(w, map[string]interface{}{"user": createdUser}, http.StatusOK)
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
-	userReq := &models.LoginRequest{}
-	err := json.NewDecoder(r.Body).Decode(userReq)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		res.Response(w, res.ErrorResponse(4000, "Invalid request"), http.StatusBadRequest)
-		return
-	}
+func Login() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userReq := &models.LoginRequest{}
+		err := json.NewDecoder(r.Body).Decode(userReq)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			res.Response(w, res.Error(4000, "Invalid request"), http.StatusBadRequest)
+			return
+		}
 
-	user := database.Postgres().Where("username = ?", userReq.Username).First(&models.User{})
-	if errors.Is(user.Error, gorm.ErrRecordNotFound) {
-		res.Response(w, res.ErrorResponse(4010, "Invalid username or password"), http.StatusUnauthorized)
-		return
-	}
+		token, responseErr := service.Login(userReq)
+		if responseErr != nil {
+			res.Response(w, responseErr, http.StatusBadRequest)
+			return
+		}
 
+		res.Response(w, map[string]interface{}{"token": token}, http.StatusOK)
+	}
 }
